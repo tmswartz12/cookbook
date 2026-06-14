@@ -7,12 +7,12 @@ export default {
       colors: {
         butter: "#F4EBD9", // page background
         paper: "#FFFDF8", // cards / surfaces
-        herb: "#1C3D30", // primary brand, header, headings, primary buttons
-        herbsoft: "#2E5C49", // secondary green
+        herb: "#1C2E50", // primary brand, header, headings, primary buttons (deep blue)
+        herbsoft: "#2E4A7C", // secondary blue
         saffron: "#E0962B", // ratings, highlights, accents
         berry: "#B23A3A", // make-again heart, destructive actions
-        ink: "#233029", // body text
-        muted: "#707B72", // secondary text
+        ink: "#22293A", // body text (blue-tinted)
+        muted: "#707788", // secondary text
         line: "#E3D9C2", // borders / dividers
       },
       fontFamily: {

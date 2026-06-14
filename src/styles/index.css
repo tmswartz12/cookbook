@@ -41,7 +41,7 @@
 }
 
 @layer components {
-  /* Primary action button — deep herb green. */
+  /* Primary action button — deep blue. */
   .btn-primary {
     @apply inline-flex items-center justify-center gap-2 rounded-full bg-herb px-5 py-2.5
       font-body font-semibold text-paper shadow-card transition

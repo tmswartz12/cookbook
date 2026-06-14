@@ -21,8 +21,8 @@ export default {
         hand: ['"Caveat"', "cursive"],
       },
       boxShadow: {
-        card: "0 1px 2px rgba(35, 48, 41, 0.06), 0 8px 24px rgba(35, 48, 41, 0.08)",
-        lift: "0 4px 8px rgba(35, 48, 41, 0.08), 0 16px 40px rgba(35, 48, 41, 0.12)",
+        card: "0 1px 2px rgba(34, 41, 58, 0.06), 0 8px 24px rgba(34, 41, 58, 0.08)",
+        lift: "0 4px 8px rgba(34, 41, 58, 0.08), 0 16px 40px rgba(34, 41, 58, 0.12)",
       },
       borderRadius: {
         card: "14px",

@@ -16,7 +16,7 @@ export function RecipePage() {
   const { data: recipe, isLoading, isError } = useRecipe(slug);
   const del = useDeleteRecipe();
   const [checked, setChecked] = useState<Set<number>>(new Set());
-  const [lightbox, setLightbox] = useState<CloudImage | null>(null);
+  const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
 
   if (isLoading) return <DetailSkeleton />;
 
@@ -53,13 +53,27 @@ export function RecipePage() {
 
   const meta = buildMeta(recipe.dateCooked, recipe.prepMinutes, recipe.cookMinutes, recipe.servings);
 
+  // The full browsable photo set: hero first, then any gallery shots.
+  const photos = [recipe.heroImage, ...recipe.gallery].filter(Boolean) as CloudImage[];
+
   return (
     <article className="mx-auto max-w-3xl">
       {/* Hero */}
       <div className="overflow-hidden rounded-card border border-line bg-paper shadow-card">
-        <div className="aspect-[16/10] w-full">
-          <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
-        </div>
+        {recipe.heroImage ? (
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(0)}
+            className="block aspect-[16/10] w-full"
+            aria-label="View photo full size"
+          >
+            <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
+          </button>
+        ) : (
+          <div className="aspect-[16/10] w-full">
+            <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
+          </div>
+        )}
       </div>
 
       {/* Title block */}
@@ -176,22 +190,31 @@ export function RecipePage() {
         <section className="mt-8">
           <h2 className="font-display text-2xl font-semibold">More shots</h2>
           <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {recipe.gallery.map((img) => (
-              <button
-                key={img.publicId}
-                type="button"
-                onClick={() => setLightbox(img)}
-                className="aspect-square overflow-hidden rounded-lg border border-line"
-              >
-                <RecipeImage image={img} transform={GALLERY_THUMB} alt={recipe.title} />
-              </button>
-            ))}
+            {recipe.gallery.map((img, i) => {
+              // Index into `photos` — hero (if any) occupies slot 0.
+              const photoIndex = recipe.heroImage ? i + 1 : i;
+              return (
+                <button
+                  key={img.publicId}
+                  type="button"
+                  onClick={() => setLightboxIndex(photoIndex)}
+                  className="aspect-square overflow-hidden rounded-lg border border-line transition hover:opacity-90"
+                >
+                  <RecipeImage image={img} transform={GALLERY_THUMB} alt={recipe.title} />
+                </button>
+              );
+            })}
           </div>
         </section>
       )}
 
-      {lightbox && (
-        <Lightbox image={lightbox} alt={recipe.title} onClose={() => setLightbox(null)} />
+      {lightboxIndex !== null && photos.length > 0 && (
+        <Lightbox
+          images={photos}
+          startIndex={lightboxIndex}
+          alt={recipe.title}
+          onClose={() => setLightboxIndex(null)}
+        />
       )}
     </article>
   );

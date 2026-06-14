@@ -224,6 +224,13 @@ export function RecipeFormPage({ mode }: Props) {
 
       <ImageUploader label="Hero photo" mode="single" value={hero} onChange={setHero} />
 
+      <ImageUploader
+        label="More photos (optional)"
+        mode="multiple"
+        value={gallery}
+        onChange={setGallery}
+      />
+
       <Field label="Date cooked" error={fieldErrors.dateCooked}>
         <input
           type="date"

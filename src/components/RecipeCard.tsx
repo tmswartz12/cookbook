@@ -31,6 +31,16 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
             ♥
           </span>
         )}
+        {recipe.gallery.length > 0 && (
+          <span
+            className="absolute bottom-2 right-2 inline-flex items-center gap-1 rounded-full
+              bg-ink/70 px-2 py-0.5 text-xs font-semibold text-paper"
+            title={`${recipe.gallery.length + 1} photos`}
+            aria-label={`${recipe.gallery.length + 1} photos`}
+          >
+            <span aria-hidden>▦</span> {recipe.gallery.length + 1}
+          </span>
+        )}
       </div>
 
       {/* Caption */}

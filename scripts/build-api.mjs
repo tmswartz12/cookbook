@@ -13,7 +13,10 @@ await build({
   platform: "node",
   target: "node20",
   format: "cjs",
-  outfile: "api/index.js",
+  // Catch-all function: matches every /api/* path and receives the ORIGINAL
+  // url (e.g. /api/recipes), which the Express app routes internally. A plain
+  // api/index.js would only match /api/index.
+  outfile: "api/[...path].js",
   packages: "external", // Vercel installs node_modules; don't inline them
   logLevel: "info",
   // Make module.exports itself the Express app (a callable (req,res) handler),
@@ -27,4 +30,4 @@ await build({
 // Ensure the emitted .js is treated as CommonJS even though the root is ESM.
 writeFileSync("api/package.json", JSON.stringify({ type: "commonjs" }, null, 2) + "\n");
 
-console.log("API bundled → api/index.js (CommonJS)");
+console.log("API bundled → api/[...path].js (CommonJS catch-all)");

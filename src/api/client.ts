@@ -56,6 +56,10 @@ export async function fetchRecipes(q: RecipeQuery): Promise<RecipeListResponse> 
   const { data } = await api.get<RecipeListResponse>("/recipes", {
     params: buildRecipeParams(q),
   });
+  // Defensive against a non-JSON response shape.
+  if (!data || !Array.isArray(data.items)) {
+    return { items: [], page: 1, limit: q.limit ?? 24, total: 0, hasMore: false };
+  }
   return data;
 }
 
@@ -66,7 +70,9 @@ export async function fetchRecipe(slug: string): Promise<Recipe> {
 
 export async function fetchTags(): Promise<string[]> {
   const { data } = await api.get<string[]>("/tags");
-  return data;
+  // Defensive: never let a non-array response (e.g. an HTML fallback) crash the
+  // UI's tags.filter()/.map().
+  return Array.isArray(data) ? data : [];
 }
 
 // ---------- Query hooks ----------

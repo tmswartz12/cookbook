@@ -9,6 +9,9 @@ node_modules/
 # build output
 dist/
 *.tsbuildinfo
+# bundled serverless function (generated from server/ by scripts/build-api.mjs)
+api/index.js
+api/package.json
 
 # vercel
 .vercel/

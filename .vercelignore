@@ -1,3 +1,3 @@
-# Local-only scripts that must never be deployed as serverless functions.
-api/dev-server.ts
-api/seed.ts
+# (Intentionally minimal.) The Express source in server/ is needed at build
+# time to bundle api/index.js, so it must NOT be excluded here. Vercel only
+# treats files under api/ as serverless functions, so server/ is never run.

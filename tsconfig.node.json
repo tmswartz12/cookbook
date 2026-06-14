@@ -23,5 +23,5 @@
       "@shared/*": ["shared/*"]
     }
   },
-  "include": ["api", "shared", "vite.config.ts", "tailwind.config.ts", "postcss.config.js"]
+  "include": ["server", "shared", "vite.config.ts", "tailwind.config.ts", "postcss.config.js"]
 }

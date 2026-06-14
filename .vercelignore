@@ -1,0 +1,3 @@
+# Local-only scripts that must never be deployed as serverless functions.
+api/dev-server.ts
+api/seed.ts

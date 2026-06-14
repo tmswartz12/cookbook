@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    @apply bg-butter text-ink font-body antialiased;
+  }
+
+  h1,
+  h2,
+  h3 {
+    @apply font-display text-herb;
+  }
+
+  /* Visible keyboard focus everywhere; mouse users don't see it. */
+  :focus-visible {
+    @apply outline-none ring-2 ring-saffron ring-offset-2 ring-offset-butter;
+    border-radius: 4px;
+  }
+
+  /* Honor reduced-motion preferences. */
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.001ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer components {
+  /* Primary action button — deep herb green. */
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-herb px-5 py-2.5
+      font-body font-semibold text-paper shadow-card transition
+      hover:bg-herbsoft active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center gap-2 rounded-full border border-line
+      bg-paper px-5 py-2.5 font-body font-semibold text-herb transition
+      hover:border-herb active:translate-y-px disabled:cursor-not-allowed disabled:opacity-60;
+  }
+
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 rounded-full bg-berry px-5 py-2.5
+      font-body font-semibold text-paper shadow-card transition
+      hover:opacity-90 active:translate-y-px;
+  }
+
+  /* Chip — used for tags, filters, cook selector. */
+  .chip {
+    @apply inline-flex items-center gap-1 rounded-full border border-line bg-paper px-3 py-1
+      text-sm text-ink transition hover:border-herb;
+  }
+
+  .chip-active {
+    @apply border-herb bg-herb text-paper hover:border-herb;
+  }
+
+  /* A field-like input. */
+  .field {
+    @apply w-full rounded-xl border border-line bg-paper px-3.5 py-2.5 text-ink
+      placeholder:text-muted focus:border-herb;
+  }
+
+  .label {
+    @apply mb-1.5 block font-body text-sm font-semibold text-ink;
+  }
+}

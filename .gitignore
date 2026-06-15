@@ -9,9 +9,10 @@ node_modules/
 # build output
 dist/
 *.tsbuildinfo
-# bundled serverless function (generated from server/ by scripts/build-api.mjs)
-api/*.js
-api/package.json
+# NOTE: the bundled serverless function api/[...path].js IS committed on purpose
+# — Vercel detects functions from the committed api/ dir before the build runs,
+# so a build-time-generated file would never be registered. Regenerate it with
+# `npm run build:api` and commit the result whenever the server/ source changes.
 
 # vercel
 .vercel/

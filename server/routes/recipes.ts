@@ -5,12 +5,11 @@ import { slugify, randomSuffix, normalizeTags } from "../lib/slug";
 import { createRecipeSchema, updateRecipeSchema, zodFields } from "../lib/validation";
 import { requireEditor, currentEmail } from "../lib/auth";
 import { destroyImage } from "../lib/cloudinary";
-import type { Cook, RecipeListResponse, RecipeSort } from "@shared/types";
+import type { RecipeListResponse, RecipeSort } from "@shared/types";
 
 const router = Router();
 export const tagsRouter = Router();
 
-const COOKS: Cook[] = ["tyler", "sarah", "both", "guest"];
 const SORTS: RecipeSort[] = ["newest", "oldest", "rating", "title"];
 
 const SORT_SPEC: Record<RecipeSort, Record<string, 1 | -1>> = {
@@ -23,24 +22,22 @@ const SORT_SPEC: Record<RecipeSort, Record<string, 1 | -1>> = {
 function parseListQuery(req: Request) {
   const q = req.query;
   const search = typeof q.search === "string" ? q.search.trim() : "";
-  const cook = COOKS.includes(q.cook as Cook) ? (q.cook as Cook) : undefined;
   const tag = typeof q.tag === "string" ? q.tag.trim().toLowerCase() : "";
   const sort: RecipeSort = SORTS.includes(q.sort as RecipeSort)
     ? (q.sort as RecipeSort)
     : "newest";
   const page = Math.max(1, Number(q.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(q.limit) || 24));
-  return { search, cook, tag, sort, page, limit };
+  return { search, tag, sort, page, limit };
 }
 
 // GET /api/recipes — list with search / filter / sort / pagination.
 router.get("/", async (req, res, next) => {
   try {
-    const { search, cook, tag, sort, page, limit } = parseListQuery(req);
+    const { search, tag, sort, page, limit } = parseListQuery(req);
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const filter: Record<string, any> = {};
-    if (cook) filter.cook = cook;
     if (tag) filter.tags = tag;
     if (search) filter.$text = { $search: search };
 

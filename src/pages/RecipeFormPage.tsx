@@ -1,6 +1,6 @@
 import { useEffect, useState, type FormEvent } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import type { CloudImage, Cook, RecipeInput } from "@shared/types";
+import type { CloudImage, RecipeInput } from "@shared/types";
 import {
   errorMessage,
   useCreateRecipe,
@@ -14,18 +14,9 @@ interface Props {
   mode: "create" | "edit";
 }
 
-const COOKS: { value: Cook; label: string }[] = [
-  { value: "tyler", label: "Tyler" },
-  { value: "sarah", label: "Sarah" },
-  { value: "both", label: "Both" },
-  { value: "guest", label: "Guest" },
-];
-
 interface FormState {
   title: string;
   description: string;
-  cook: Cook;
-  guestName: string;
   dateCooked: string;
   cuisine: string;
   prepMinutes: string;
@@ -42,8 +33,6 @@ interface FormState {
 const EMPTY: FormState = {
   title: "",
   description: "",
-  cook: "both",
-  guestName: "",
   dateCooked: new Date().toISOString().slice(0, 10),
   cuisine: "",
   prepMinutes: "",
@@ -79,8 +68,6 @@ export function RecipeFormPage({ mode }: Props) {
       setForm({
         title: existing.title,
         description: existing.description ?? "",
-        cook: existing.cook,
-        guestName: existing.guestName ?? "",
         dateCooked: existing.dateCooked.slice(0, 10),
         cuisine: existing.cuisine ?? "",
         prepMinutes: existing.prepMinutes?.toString() ?? "",
@@ -122,8 +109,6 @@ export function RecipeFormPage({ mode }: Props) {
     return {
       title: form.title.trim(),
       description: form.description.trim() || undefined,
-      cook: form.cook,
-      guestName: form.cook === "guest" ? form.guestName.trim() || undefined : undefined,
       dateCooked: form.dateCooked,
       heroImage: hero[0],
       gallery,
@@ -191,36 +176,6 @@ export function RecipeFormPage({ mode }: Props) {
           placeholder="A sentence to tempt a friend"
         />
       </Field>
-
-      {/* Cook selector */}
-      <div>
-        <span className="label">Who made it?</span>
-        <div className="flex flex-wrap gap-2">
-          {COOKS.map((c) => (
-            <button
-              key={c.value}
-              type="button"
-              onClick={() => set("cook", c.value)}
-              className={`chip ${form.cook === c.value ? "chip-active" : ""}`}
-              aria-pressed={form.cook === c.value}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-        {form.cook === "guest" && (
-          <div className="mt-3">
-            <Field label="Guest's name" error={fieldErrors.guestName}>
-              <input
-                className="field"
-                value={form.guestName}
-                onChange={(e) => set("guestName", e.target.value)}
-                placeholder="e.g. Aunt May"
-              />
-            </Field>
-          </div>
-        )}
-      </div>
 
       <ImageUploader label="Hero photo" mode="single" value={hero} onChange={setHero} />
 

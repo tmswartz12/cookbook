@@ -44,7 +44,6 @@ export async function fetchMe(): Promise<User | null> {
 function buildRecipeParams(q: RecipeQuery): Record<string, string> {
   const params: Record<string, string> = {};
   if (q.search) params.search = q.search;
-  if (q.cook) params.cook = q.cook;
   if (q.tag) params.tag = q.tag;
   if (q.sort) params.sort = q.sort;
   if (q.page) params.page = String(q.page);

@@ -102,12 +102,6 @@ var recipeSchema = new Schema(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true },
     description: { type: String, trim: true },
-    cook: {
-      type: String,
-      enum: ["tyler", "sarah", "both", "guest"],
-      required: true
-    },
-    guestName: { type: String, trim: true },
     dateCooked: { type: Date, required: true },
     heroImage: { type: cloudImageSchema, default: void 0 },
     gallery: { type: [cloudImageSchema], default: [] },
@@ -143,8 +137,6 @@ function serializeRecipe(doc) {
     title: doc.title,
     slug: doc.slug,
     description: doc.description ?? void 0,
-    cook: doc.cook,
-    guestName: doc.guestName ?? void 0,
     dateCooked: toISO(doc.dateCooked),
     heroImage: doc.heroImage ?? void 0,
     gallery: doc.gallery ?? [],
@@ -178,14 +170,11 @@ var cloudImage = import_zod.z.object({
   width: import_zod.z.number().int().positive(),
   height: import_zod.z.number().int().positive()
 }).strict();
-var cook = import_zod.z.enum(["tyler", "sarah", "both", "guest"]);
 var lineArray = import_zod.z.array(import_zod.z.string().trim().min(1, "No empty lines.")).default([]);
 var tagArray = import_zod.z.array(import_zod.z.string().trim().min(1)).max(20).default([]);
 var base = {
   title: import_zod.z.string().trim().min(1, "Give it a title."),
   description: import_zod.z.string().trim().max(280).optional(),
-  cook,
-  guestName: import_zod.z.string().trim().max(80).optional(),
   dateCooked: import_zod.z.string().refine((s) => !Number.isNaN(Date.parse(s)), "Invalid date."),
   heroImage: cloudImage.optional(),
   gallery: import_zod.z.array(cloudImage).max(12).default([]),
@@ -201,14 +190,8 @@ var base = {
   notes: import_zod.z.string().trim().max(4e3).optional(),
   sourceUrl: import_zod.z.string().trim().url().optional().or(import_zod.z.literal(""))
 };
-var createRecipeSchema = import_zod.z.object(base).strict().refine((d) => d.cook !== "guest" || Boolean(d.guestName?.trim()), {
-  message: "Add the guest's name.",
-  path: ["guestName"]
-});
-var updateRecipeSchema = import_zod.z.object(base).partial().strict().refine((d) => d.cook !== "guest" || Boolean(d.guestName?.trim()), {
-  message: "Add the guest's name.",
-  path: ["guestName"]
-});
+var createRecipeSchema = import_zod.z.object(base).strict();
+var updateRecipeSchema = import_zod.z.object(base).partial().strict();
 function zodFields(err) {
   const out = {};
   for (const issue of err.issues) {
@@ -319,7 +302,6 @@ async function destroyImage(publicId) {
 // server/routes/recipes.ts
 var router = (0, import_express.Router)();
 var tagsRouter = (0, import_express.Router)();
-var COOKS = ["tyler", "sarah", "both", "guest"];
 var SORTS = ["newest", "oldest", "rating", "title"];
 var SORT_SPEC = {
   newest: { dateCooked: -1 },
@@ -330,18 +312,16 @@ var SORT_SPEC = {
 function parseListQuery(req) {
   const q = req.query;
   const search = typeof q.search === "string" ? q.search.trim() : "";
-  const cook2 = COOKS.includes(q.cook) ? q.cook : void 0;
   const tag = typeof q.tag === "string" ? q.tag.trim().toLowerCase() : "";
   const sort = SORTS.includes(q.sort) ? q.sort : "newest";
   const page = Math.max(1, Number(q.page) || 1);
   const limit = Math.min(100, Math.max(1, Number(q.limit) || 24));
-  return { search, cook: cook2, tag, sort, page, limit };
+  return { search, tag, sort, page, limit };
 }
 router.get("/", async (req, res, next) => {
   try {
-    const { search, cook: cook2, tag, sort, page, limit } = parseListQuery(req);
+    const { search, tag, sort, page, limit } = parseListQuery(req);
     const filter = {};
-    if (cook2) filter.cook = cook2;
     if (tag) filter.tags = tag;
     if (search) filter.$text = { $search: search };
     const sortSpec = SORT_SPEC[sort];

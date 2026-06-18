@@ -9,8 +9,6 @@ const cloudImage = z
   })
   .strict();
 
-const cook = z.enum(["tyler", "sarah", "both", "guest"]);
-
 const lineArray = z.array(z.string().trim().min(1, "No empty lines.")).default([]);
 
 const tagArray = z.array(z.string().trim().min(1)).max(20).default([]);
@@ -19,8 +17,6 @@ const tagArray = z.array(z.string().trim().min(1)).max(20).default([]);
 const base = {
   title: z.string().trim().min(1, "Give it a title."),
   description: z.string().trim().max(280).optional(),
-  cook,
-  guestName: z.string().trim().max(80).optional(),
   dateCooked: z.string().refine((s) => !Number.isNaN(Date.parse(s)), "Invalid date."),
   heroImage: cloudImage.optional(),
   gallery: z.array(cloudImage).max(12).default([]),
@@ -37,24 +33,11 @@ const base = {
   sourceUrl: z.string().trim().url().optional().or(z.literal("")),
 };
 
-// Reject unknown fields (.strict). Require guestName when cook === "guest".
-export const createRecipeSchema = z
-  .object(base)
-  .strict()
-  .refine((d) => d.cook !== "guest" || Boolean(d.guestName?.trim()), {
-    message: "Add the guest's name.",
-    path: ["guestName"],
-  });
+// Reject unknown fields (.strict).
+export const createRecipeSchema = z.object(base).strict();
 
-// Update: all optional, but keep the guest-name rule when cook is provided.
-export const updateRecipeSchema = z
-  .object(base)
-  .partial()
-  .strict()
-  .refine((d) => d.cook !== "guest" || Boolean(d.guestName?.trim()), {
-    message: "Add the guest's name.",
-    path: ["guestName"],
-  });
+// Update: all optional.
+export const updateRecipeSchema = z.object(base).partial().strict();
 
 export type CreateRecipeBody = z.infer<typeof createRecipeSchema>;
 export type UpdateRecipeBody = z.infer<typeof updateRecipeSchema>;

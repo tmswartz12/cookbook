@@ -15,8 +15,6 @@ import { slugify } from "./lib/slug";
 type Seed = {
   title: string;
   description: string;
-  cook: "tyler" | "sarah" | "both" | "guest";
-  guestName?: string;
   dateCooked: string;
   heroUrl: string;
   ingredients: string[];
@@ -42,7 +40,6 @@ const SEEDS: Seed[] = [
   {
     title: "Garlicky Weeknight Pasta",
     description: "The one we make when there's nothing in the fridge but garlic.",
-    cook: "sarah",
     dateCooked: "2026-06-10",
     heroUrl: "pasta",
     ingredients: [
@@ -72,7 +69,6 @@ const SEEDS: Seed[] = [
   {
     title: "Sunday Morning Pancakes",
     description: "Fluffy, slightly tangy, worth getting out of bed for.",
-    cook: "tyler",
     dateCooked: "2026-06-08",
     heroUrl: "balloons",
     ingredients: [
@@ -101,7 +97,6 @@ const SEEDS: Seed[] = [
   {
     title: "Charred Summer Veg Tacos",
     description: "Smoky, bright, and gone in minutes on the porch.",
-    cook: "both",
     dateCooked: "2026-06-05",
     heroUrl: "sample",
     ingredients: [
@@ -128,9 +123,7 @@ const SEEDS: Seed[] = [
   },
   {
     title: "Aunt May's Lemon Olive Oil Cake",
-    description: "A guest recipe that immediately became ours.",
-    cook: "guest",
-    guestName: "Aunt May",
+    description: "Aunt May's recipe that immediately became ours.",
     dateCooked: "2026-05-28",
     heroUrl: "dessert",
     ingredients: [
@@ -171,8 +164,6 @@ async function run() {
           title: s.title,
           slug,
           description: s.description,
-          cook: s.cook,
-          guestName: s.guestName,
           dateCooked: new Date(s.dateCooked),
           heroImage: demoImage(s.heroUrl),
           gallery: [],

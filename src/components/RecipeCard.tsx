@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import type { Recipe } from "@shared/types";
 import { CARD_THUMB } from "../api/cloudinary";
 import { RecipeImage } from "./RecipeImage";
-import { CookTag } from "./CookTag";
 import { StarRating } from "./StarRating";
 
 /** A recipe card styled like a pinned/printed photo with a handwritten caption. */
@@ -45,8 +44,7 @@ export function RecipeCard({ recipe }: { recipe: Recipe }) {
 
       {/* Caption */}
       <div className="px-1 pb-1 pt-3">
-        <CookTag cook={recipe.cook} guestName={recipe.guestName} />
-        <h3 className="mt-0.5 font-display text-xl font-semibold leading-tight text-herb">
+        <h3 className="font-display text-xl font-semibold leading-tight text-herb">
           {recipe.title}
         </h3>
         {recipe.description && (

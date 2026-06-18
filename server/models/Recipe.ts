@@ -18,12 +18,6 @@ const recipeSchema = new Schema(
     title: { type: String, required: true, trim: true },
     slug: { type: String, required: true, unique: true },
     description: { type: String, trim: true },
-    cook: {
-      type: String,
-      enum: ["tyler", "sarah", "both", "guest"],
-      required: true,
-    },
-    guestName: { type: String, trim: true },
     dateCooked: { type: Date, required: true },
     heroImage: { type: cloudImageSchema, default: undefined },
     gallery: { type: [cloudImageSchema], default: [] },

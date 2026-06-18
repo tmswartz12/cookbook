@@ -18,12 +18,11 @@ export function GalleryPage() {
   const query = useMemo(
     () => ({
       search: debouncedSearch || undefined,
-      cook: filters.cook,
       tag: filters.tag,
       sort: filters.sort,
       limit: 24,
     }),
-    [debouncedSearch, filters.cook, filters.tag, filters.sort],
+    [debouncedSearch, filters.tag, filters.sort],
   );
 
   const {
@@ -38,8 +37,7 @@ export function GalleryPage() {
 
   const items = data?.pages.flatMap((p) => p.items) ?? [];
   const total = data?.pages[0]?.total ?? 0;
-  const isFiltered =
-    Boolean(debouncedSearch) || Boolean(filters.cook) || Boolean(filters.tag);
+  const isFiltered = Boolean(debouncedSearch) || Boolean(filters.tag);
 
   return (
     <section>

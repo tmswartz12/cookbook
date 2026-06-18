@@ -11,7 +11,6 @@ import { slugify } from "./lib/slug";
 const recipe = {
   title: "Crispy Baked Chicken Parmesan",
   description: "Golden, fried-looking crust without the frying — over spaghetti.",
-  cook: "both" as const,
   dateCooked: new Date(),
   ingredients: [
     "4 boneless skinless chicken breasts",

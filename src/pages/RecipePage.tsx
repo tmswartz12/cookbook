@@ -4,7 +4,6 @@ import type { CloudImage } from "@shared/types";
 import { errorMessage, useDeleteRecipe, useRecipe } from "../api/client";
 import { useAuth } from "../components/AuthProvider";
 import { RecipeImage } from "../components/RecipeImage";
-import { CookTag } from "../components/CookTag";
 import { StarRating } from "../components/StarRating";
 import { Lightbox } from "../components/Lightbox";
 import { DETAIL_HERO, GALLERY_THUMB } from "../api/cloudinary";
@@ -76,16 +75,34 @@ export function RecipePage() {
         )}
       </div>
 
+      {/* Photo strip — sits directly under the hero; opens the fullscreen viewer */}
+      {recipe.gallery.length > 0 && (
+        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
+          {recipe.gallery.map((img, i) => {
+            // Index into `photos` — hero (if any) occupies slot 0.
+            const photoIndex = recipe.heroImage ? i + 1 : i;
+            return (
+              <button
+                key={img.publicId}
+                type="button"
+                onClick={() => setLightboxIndex(photoIndex)}
+                className="aspect-square overflow-hidden rounded-lg border border-line transition hover:opacity-90"
+                aria-label="View photo full size"
+              >
+                <RecipeImage image={img} transform={GALLERY_THUMB} alt={recipe.title} />
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Title block */}
       <header className="mt-5">
-        <div className="flex flex-wrap items-center gap-3">
-          <CookTag cook={recipe.cook} guestName={recipe.guestName} />
-          {recipe.makeAgain && (
-            <span className="inline-flex items-center gap-1 text-berry" title="We'd make this again">
-              ♥ <span className="text-sm font-semibold">we'd make this again</span>
-            </span>
-          )}
-        </div>
+        {recipe.makeAgain && (
+          <span className="inline-flex items-center gap-1 text-berry" title="We'd make this again">
+            ♥ <span className="text-sm font-semibold">we'd make this again</span>
+          </span>
+        )}
         <h1 className="mt-1 font-display text-4xl font-semibold leading-tight">{recipe.title}</h1>
         {recipe.description && <p className="mt-2 text-lg text-muted">{recipe.description}</p>}
 
@@ -183,29 +200,6 @@ export function RecipePage() {
           </a>
           .
         </p>
-      )}
-
-      {/* Gallery */}
-      {recipe.gallery.length > 0 && (
-        <section className="mt-8">
-          <h2 className="font-display text-2xl font-semibold">More shots</h2>
-          <div className="mt-3 grid grid-cols-3 gap-3 sm:grid-cols-4">
-            {recipe.gallery.map((img, i) => {
-              // Index into `photos` — hero (if any) occupies slot 0.
-              const photoIndex = recipe.heroImage ? i + 1 : i;
-              return (
-                <button
-                  key={img.publicId}
-                  type="button"
-                  onClick={() => setLightboxIndex(photoIndex)}
-                  className="aspect-square overflow-hidden rounded-lg border border-line transition hover:opacity-90"
-                >
-                  <RecipeImage image={img} transform={GALLERY_THUMB} alt={recipe.title} />
-                </button>
-              );
-            })}
-          </div>
-        </section>
       )}
 
       {lightboxIndex !== null && photos.length > 0 && (

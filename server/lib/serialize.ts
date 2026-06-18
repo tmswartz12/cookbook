@@ -8,8 +8,6 @@ export function serializeRecipe(doc: any): RecipeType {
     title: doc.title,
     slug: doc.slug,
     description: doc.description ?? undefined,
-    cook: doc.cook,
-    guestName: doc.guestName ?? undefined,
     dateCooked: toISO(doc.dateCooked),
     heroImage: doc.heroImage ?? undefined,
     gallery: doc.gallery ?? [],

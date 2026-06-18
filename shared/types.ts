@@ -1,5 +1,3 @@
-export type Cook = "tyler" | "sarah" | "both" | "guest";
-
 export type Role = "editor" | "viewer";
 
 export interface CloudImage {
@@ -14,8 +12,6 @@ export interface Recipe {
   title: string;
   slug: string; // unique, derived from title
   description?: string; // one-line teaser
-  cook: Cook;
-  guestName?: string; // only when cook === "guest"
   dateCooked: string; // ISO date
   heroImage?: CloudImage;
   gallery: CloudImage[]; // optional extra shots
@@ -53,7 +49,6 @@ export type RecipeSort = "newest" | "oldest" | "rating" | "title";
 
 export interface RecipeQuery {
   search?: string;
-  cook?: Cook;
   tag?: string;
   sort?: RecipeSort;
   page?: number;
@@ -64,8 +59,6 @@ export interface RecipeQuery {
 export interface RecipeInput {
   title: string;
   description?: string;
-  cook: Cook;
-  guestName?: string;
   dateCooked: string;
   heroImage?: CloudImage;
   gallery?: CloudImage[];

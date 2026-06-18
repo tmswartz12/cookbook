@@ -57,47 +57,8 @@ export function RecipePage() {
 
   return (
     <article className="mx-auto max-w-3xl">
-      {/* Hero */}
-      <div className="overflow-hidden rounded-card border border-line bg-paper shadow-card">
-        {recipe.heroImage ? (
-          <button
-            type="button"
-            onClick={() => setLightboxIndex(0)}
-            className="block aspect-[16/10] w-full"
-            aria-label="View photo full size"
-          >
-            <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
-          </button>
-        ) : (
-          <div className="aspect-[16/10] w-full">
-            <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
-          </div>
-        )}
-      </div>
-
-      {/* Photo strip — sits directly under the hero; opens the fullscreen viewer */}
-      {recipe.gallery.length > 0 && (
-        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
-          {recipe.gallery.map((img, i) => {
-            // Index into `photos` — hero (if any) occupies slot 0.
-            const photoIndex = recipe.heroImage ? i + 1 : i;
-            return (
-              <button
-                key={img.publicId}
-                type="button"
-                onClick={() => setLightboxIndex(photoIndex)}
-                className="aspect-square overflow-hidden rounded-lg border border-line transition hover:opacity-90"
-                aria-label="View photo full size"
-              >
-                <RecipeImage image={img} transform={GALLERY_THUMB} alt={recipe.title} />
-              </button>
-            );
-          })}
-        </div>
-      )}
-
-      {/* Title block */}
-      <header className="mt-5">
+      {/* Title + details — sit above the hero photo */}
+      <header className="mb-5">
         {recipe.makeAgain && (
           <span className="inline-flex items-center gap-1 text-berry" title="We'd make this again">
             ♥ <span className="text-sm font-semibold">we'd make this again</span>
@@ -139,6 +100,45 @@ export function RecipePage() {
           </div>
         )}
       </header>
+
+      {/* Hero */}
+      <div className="overflow-hidden rounded-card border border-line bg-paper shadow-card">
+        {recipe.heroImage ? (
+          <button
+            type="button"
+            onClick={() => setLightboxIndex(0)}
+            className="block aspect-[16/10] w-full"
+            aria-label="View photo full size"
+          >
+            <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
+          </button>
+        ) : (
+          <div className="aspect-[16/10] w-full">
+            <RecipeImage image={recipe.heroImage} transform={DETAIL_HERO} alt={recipe.title} />
+          </div>
+        )}
+      </div>
+
+      {/* Photo strip — sits directly under the hero; opens the fullscreen viewer */}
+      {recipe.gallery.length > 0 && (
+        <div className="mt-3 grid grid-cols-4 gap-3 sm:grid-cols-6">
+          {recipe.gallery.map((img, i) => {
+            // Index into `photos` — hero (if any) occupies slot 0.
+            const photoIndex = recipe.heroImage ? i + 1 : i;
+            return (
+              <button
+                key={img.publicId}
+                type="button"
+                onClick={() => setLightboxIndex(photoIndex)}
+                className="aspect-square overflow-hidden rounded-lg border border-line transition hover:opacity-90"
+                aria-label="View photo full size"
+              >
+                <RecipeImage image={img} transform={GALLERY_THUMB} alt={recipe.title} />
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Body */}
       <div className="mt-8 grid gap-8 md:grid-cols-[1fr_1.4fr]">

@@ -25,6 +25,14 @@ export async function connectDB(): Promise<typeof mongoose> {
     cached.promise = mongoose.connect(uri, { bufferCommands: false });
   }
 
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    // Don't cache a rejected promise — otherwise every later invocation on this
+    // warm instance reuses the failed connect and never retries until a cold
+    // start. Clear it so the next request can attempt a fresh connection.
+    cached.promise = null;
+    throw err;
+  }
   return cached.conn;
 }

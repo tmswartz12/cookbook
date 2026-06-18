@@ -50,7 +50,12 @@ async function connectDB() {
   if (!cached.promise) {
     cached.promise = import_mongoose.default.connect(uri, { bufferCommands: false });
   }
-  cached.conn = await cached.promise;
+  try {
+    cached.conn = await cached.promise;
+  } catch (err) {
+    cached.promise = null;
+    throw err;
+  }
   return cached.conn;
 }
 

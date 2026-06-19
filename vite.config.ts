@@ -24,6 +24,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
+    // Fail loudly if 5173 is taken rather than sliding to 5174 — Google OAuth
+    // only allows the registered origin (localhost:5173), so a port fallback
+    // silently breaks sign-in.
+    strictPort: true,
     proxy: {
       "/api": {
         target: "http://localhost:3001",

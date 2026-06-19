@@ -13,6 +13,25 @@ const lineArray = z.array(z.string().trim().min(1, "No empty lines.")).default([
 
 const tagArray = z.array(z.string().trim().min(1)).max(20).default([]);
 
+// Names of the people we cooked for — simple chips, like tags.
+const cookedForArray = z.array(z.string().trim().min(1)).max(50).default([]);
+
+// "Recommended by" credit: a name plus an optional Instagram handle.
+// The leading @ is stripped so we always store a bare handle.
+const recommendedBy = z
+  .object({
+    name: z.string().trim().min(1, "Add a name."),
+    instagram: z
+      .string()
+      .trim()
+      .max(61)
+      .transform((s) => s.replace(/^@+/, "").trim())
+      .optional()
+      .or(z.literal("")),
+  })
+  .strict()
+  .optional();
+
 // Base shape shared by create + update.
 const base = {
   title: z.string().trim().min(1, "Give it a title."),
@@ -31,6 +50,8 @@ const base = {
   makeAgain: z.boolean().default(false),
   notes: z.string().trim().max(4000).optional(),
   sourceUrl: z.string().trim().url().optional().or(z.literal("")),
+  recommendedBy,
+  cookedFor: cookedForArray,
 };
 
 // Reject unknown fields (.strict).

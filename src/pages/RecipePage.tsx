@@ -1,11 +1,14 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import type { CloudImage } from "@shared/types";
+import { SITE_NAME, recipeShareMeta } from "@shared/share";
 import { errorMessage, useDeleteRecipe, useRecipe } from "../api/client";
 import { useAuth } from "../components/AuthProvider";
 import { RecipeImage } from "../components/RecipeImage";
 import { StarRating } from "../components/StarRating";
+import { ShareButton } from "../components/ShareButton";
 import { Lightbox } from "../components/Lightbox";
+import { useDocumentTitle } from "../hooks/useDocumentTitle";
 import { DETAIL_HERO, GALLERY_THUMB } from "../api/cloudinary";
 
 export function RecipePage() {
@@ -16,6 +19,9 @@ export function RecipePage() {
   const del = useDeleteRecipe();
   const [checked, setChecked] = useState<Set<number>>(new Set());
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
+
+  // Per-recipe browser-tab title (resets to the site title on unmount).
+  useDocumentTitle(recipe ? `${recipe.title} — ${SITE_NAME}` : null);
 
   if (isLoading) return <DetailSkeleton />;
 
@@ -52,6 +58,11 @@ export function RecipePage() {
 
   const meta = buildMeta(recipe.dateCooked, recipe.prepMinutes, recipe.cookMinutes, recipe.servings);
 
+  const share = recipeShareMeta(recipe, {
+    siteOrigin: window.location.origin,
+    siteName: SITE_NAME,
+  });
+
   // The full browsable photo set: hero first, then any gallery shots.
   const photos = [recipe.heroImage, ...recipe.gallery].filter(Boolean) as CloudImage[];
 
@@ -66,6 +77,25 @@ export function RecipePage() {
         )}
         <h1 className="mt-1 font-display text-4xl font-semibold leading-tight">{recipe.title}</h1>
         {recipe.description && <p className="mt-2 text-lg text-muted">{recipe.description}</p>}
+
+        {recipe.recommendedBy && (
+          <p className="mt-2 text-sm text-muted">
+            Recommended by{" "}
+            {recipe.recommendedBy.instagram ? (
+              <a
+                href={`https://instagram.com/${recipe.recommendedBy.instagram}`}
+                target="_blank"
+                rel="noreferrer"
+                className="font-semibold text-herbsoft underline"
+              >
+                {recipe.recommendedBy.name}
+                <span className="text-muted"> @{recipe.recommendedBy.instagram}</span>
+              </a>
+            ) : (
+              <span className="font-semibold text-ink">{recipe.recommendedBy.name}</span>
+            )}
+          </p>
+        )}
 
         <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted">
           {meta.map((m) => (
@@ -84,21 +114,24 @@ export function RecipePage() {
           </div>
         )}
 
-        {isEditor && (
-          <div className="mt-4 flex gap-2">
-            <Link to={`/recipe/${recipe.slug}/edit`} className="btn-secondary">
-              Edit
-            </Link>
-            <button
-              type="button"
-              onClick={handleDelete}
-              className="btn-danger"
-              disabled={del.isPending}
-            >
-              {del.isPending ? "Deleting…" : "Delete"}
-            </button>
-          </div>
-        )}
+        <div className="mt-4 flex flex-wrap gap-2">
+          <ShareButton title={share.title} text={share.description} url={share.url} />
+          {isEditor && (
+            <>
+              <Link to={`/recipe/${recipe.slug}/edit`} className="btn-secondary">
+                Edit
+              </Link>
+              <button
+                type="button"
+                onClick={handleDelete}
+                className="btn-danger"
+                disabled={del.isPending}
+              >
+                {del.isPending ? "Deleting…" : "Delete"}
+              </button>
+            </>
+          )}
+        </div>
       </header>
 
       {/* Hero */}
@@ -177,6 +210,20 @@ export function RecipePage() {
           </ol>
         </section>
       </div>
+
+      {/* Cooked for — who we made this for */}
+      {recipe.cookedFor.length > 0 && (
+        <aside className="mt-8 rounded-card border border-line bg-paper p-5">
+          <p className="font-hand text-xl text-herbsoft">cooked for</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {recipe.cookedFor.map((n) => (
+              <span key={n} className="chip">
+                {n}
+              </span>
+            ))}
+          </div>
+        </aside>
+      )}
 
       {/* Notes — handwritten callout */}
       {recipe.notes && (

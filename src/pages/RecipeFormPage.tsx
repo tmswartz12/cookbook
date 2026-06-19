@@ -26,6 +26,8 @@ interface FormState {
   makeAgain: boolean;
   notes: string;
   sourceUrl: string;
+  recommendedByName: string;
+  recommendedByInstagram: string;
   ingredients: string; // textarea, one per line
   steps: string; // textarea, one per line
 }
@@ -42,6 +44,8 @@ const EMPTY: FormState = {
   makeAgain: false,
   notes: "",
   sourceUrl: "",
+  recommendedByName: "",
+  recommendedByInstagram: "",
   ingredients: "",
   steps: "",
 };
@@ -59,6 +63,8 @@ export function RecipeFormPage({ mode }: Props) {
   const [gallery, setGallery] = useState<CloudImage[]>([]);
   const [tags, setTags] = useState<string[]>([]);
   const [tagDraft, setTagDraft] = useState("");
+  const [cookedFor, setCookedFor] = useState<string[]>([]);
+  const [cookedForDraft, setCookedForDraft] = useState("");
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
 
@@ -77,12 +83,15 @@ export function RecipeFormPage({ mode }: Props) {
         makeAgain: existing.makeAgain,
         notes: existing.notes ?? "",
         sourceUrl: existing.sourceUrl ?? "",
+        recommendedByName: existing.recommendedBy?.name ?? "",
+        recommendedByInstagram: existing.recommendedBy?.instagram ?? "",
         ingredients: existing.ingredients.join("\n"),
         steps: existing.steps.join("\n"),
       });
       setHero(existing.heroImage ? [existing.heroImage] : []);
       setGallery(existing.gallery);
       setTags(existing.tags);
+      setCookedFor(existing.cookedFor ?? []);
     }
   }, [mode, existing]);
 
@@ -98,6 +107,15 @@ export function RecipeFormPage({ mode }: Props) {
     setTagDraft("");
   }
 
+  function addCookedFor(raw: string) {
+    // Names keep their original casing; only the trailing comma is stripped.
+    const n = raw.trim().replace(/,$/, "").trim();
+    if (n && !cookedFor.some((x) => x.toLowerCase() === n.toLowerCase())) {
+      setCookedFor([...cookedFor, n]);
+    }
+    setCookedForDraft("");
+  }
+
   function buildPayload(): RecipeInput {
     const lines = (s: string) =>
       s
@@ -105,6 +123,12 @@ export function RecipeFormPage({ mode }: Props) {
         .map((l) => l.trim())
         .filter(Boolean);
     const num = (s: string) => (s.trim() === "" ? undefined : Number(s));
+
+    const recName = form.recommendedByName.trim();
+    const recIg = form.recommendedByInstagram.trim().replace(/^@+/, "");
+    const recommendedBy = recName
+      ? { name: recName, instagram: recIg || undefined }
+      : undefined;
 
     return {
       title: form.title.trim(),
@@ -123,6 +147,8 @@ export function RecipeFormPage({ mode }: Props) {
       makeAgain: form.makeAgain,
       notes: form.notes.trim() || undefined,
       sourceUrl: form.sourceUrl.trim() || undefined,
+      recommendedBy,
+      cookedFor,
     };
   }
 
@@ -307,6 +333,63 @@ export function RecipeFormPage({ mode }: Props) {
           placeholder="Add more garlic. Always more garlic."
         />
       </Field>
+
+      {/* Recommended by — credit a person + optional Instagram */}
+      <div>
+        <span className="label">Recommended by</span>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <input
+            className="field"
+            value={form.recommendedByName}
+            onChange={(e) => set("recommendedByName", e.target.value)}
+            placeholder="Their name"
+          />
+          <div className="flex items-center gap-2">
+            <span className="font-body text-lg text-muted">@</span>
+            <input
+              className="field"
+              value={form.recommendedByInstagram}
+              onChange={(e) => set("recommendedByInstagram", e.target.value)}
+              placeholder="instagram handle (optional)"
+            />
+          </div>
+        </div>
+        {fieldErrors["recommendedBy.name"] && (
+          <p className="mt-1 text-sm text-berry">{fieldErrors["recommendedBy.name"]}</p>
+        )}
+      </div>
+
+      {/* Cooked for — names of the people we made this for */}
+      <div>
+        <span className="label">Cooked for</span>
+        {cookedFor.length > 0 && (
+          <div className="mb-2 flex flex-wrap gap-2">
+            {cookedFor.map((n) => (
+              <button
+                key={n}
+                type="button"
+                onClick={() => setCookedFor(cookedFor.filter((x) => x !== n))}
+                className="chip chip-active"
+              >
+                {n} ✕
+              </button>
+            ))}
+          </div>
+        )}
+        <input
+          className="field"
+          value={cookedForDraft}
+          onChange={(e) => setCookedForDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              addCookedFor(cookedForDraft);
+            }
+          }}
+          onBlur={() => cookedForDraft && addCookedFor(cookedForDraft)}
+          placeholder="Type a name, press Enter (e.g. Alex, Sam)"
+        />
+      </div>
 
       <Field label="Source URL (if adapted)" error={fieldErrors.sourceUrl}>
         <input

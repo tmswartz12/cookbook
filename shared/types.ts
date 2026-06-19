@@ -7,6 +7,12 @@ export interface CloudImage {
   height: number;
 }
 
+/** Credit for whoever recommended a recipe — name shown, links to IG if given. */
+export interface RecommendedBy {
+  name: string;
+  instagram?: string; // handle without the leading @, e.g. "jamieoliver"
+}
+
 export interface Recipe {
   _id: string;
   title: string;
@@ -26,6 +32,8 @@ export interface Recipe {
   makeAgain: boolean; // the fun "would we make this again?" flag
   notes?: string; // personal commentary, tweaks, "add more garlic"
   sourceUrl?: string; // if adapted from somewhere
+  recommendedBy?: RecommendedBy; // who recommended it (creditable IG)
+  cookedFor: string[]; // names of the people we cooked this for
   createdBy: string; // editor email
   createdAt: string;
   updatedAt: string;
@@ -73,6 +81,8 @@ export interface RecipeInput {
   makeAgain?: boolean;
   notes?: string;
   sourceUrl?: string;
+  recommendedBy?: RecommendedBy;
+  cookedFor?: string[];
 }
 
 /** Response from POST /api/uploads/sign — params for a direct Cloudinary upload. */

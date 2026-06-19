@@ -32,7 +32,7 @@ __export(index_exports, {
   default: () => index_default
 });
 module.exports = __toCommonJS(index_exports);
-var import_express4 = __toESM(require("express"), 1);
+var import_express5 = __toESM(require("express"), 1);
 var import_cors = __toESM(require("cors"), 1);
 var import_helmet = __toESM(require("helmet"), 1);
 var import_cookie_parser = __toESM(require("cookie-parser"), 1);
@@ -520,17 +520,135 @@ router3.post("/sign", requireEditor, (_req, res, next) => {
 });
 var uploads_default = router3;
 
+// server/routes/og.ts
+var import_express4 = require("express");
+var import_node_fs = require("node:fs");
+var import_node_path = require("node:path");
+
+// shared/share.ts
+var SITE_NAME = "Tyler & Sarah's Cookbook";
+var OG_IMAGE = "f_jpg,q_auto,c_fill,w_1200,h_630,g_auto";
+function cloudinaryUrl(cloudName, publicId, transform) {
+  if (!cloudName) return "";
+  return `https://res.cloudinary.com/${cloudName}/image/upload/${transform}/${publicId}`;
+}
+function recipeShareMeta(recipe, opts) {
+  const description = recipe.description?.trim() || `A recipe from ${opts.siteName}.`;
+  const imageUrl = recipe.heroImage ? cloudinaryUrl(opts.cloudName, recipe.heroImage.publicId, OG_IMAGE) : "";
+  return {
+    title: `${recipe.title} \u2014 ${opts.siteName}`,
+    description,
+    imageUrl,
+    url: `${opts.siteOrigin.replace(/\/$/, "")}/recipe/${recipe.slug}`
+  };
+}
+
+// server/routes/og.ts
+var ogRouter = (0, import_express4.Router)();
+var shellCache = null;
+function loadShell() {
+  if (shellCache !== null) return shellCache;
+  const candidates = [
+    (0, import_node_path.join)(__dirname, "index.html"),
+    (0, import_node_path.join)(process.cwd(), "api", "index.html"),
+    (0, import_node_path.join)(process.cwd(), "dist", "index.html")
+  ];
+  for (const path of candidates) {
+    try {
+      shellCache = (0, import_node_fs.readFileSync)(path, "utf8");
+      return shellCache;
+    } catch {
+    }
+  }
+  shellCache = "";
+  return shellCache;
+}
+function escapeHtml(s) {
+  return s.replace(/&/g, "&amp;").replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
+function metaTags(opts) {
+  const t = escapeHtml(opts.title);
+  const d = escapeHtml(opts.description);
+  const u = escapeHtml(opts.url);
+  const img = opts.imageUrl ? escapeHtml(opts.imageUrl) : "";
+  const lines = [
+    `<title>${t}</title>`,
+    `<meta name="description" content="${d}" />`,
+    `<link rel="canonical" href="${u}" />`,
+    `<meta property="og:type" content="article" />`,
+    `<meta property="og:site_name" content="${escapeHtml(SITE_NAME)}" />`,
+    `<meta property="og:title" content="${t}" />`,
+    `<meta property="og:description" content="${d}" />`,
+    `<meta property="og:url" content="${u}" />`,
+    `<meta name="twitter:card" content="${img ? "summary_large_image" : "summary"}" />`,
+    `<meta name="twitter:title" content="${t}" />`,
+    `<meta name="twitter:description" content="${d}" />`
+  ];
+  if (img) {
+    lines.push(`<meta property="og:image" content="${img}" />`);
+    lines.push(`<meta property="og:image:width" content="1200" />`);
+    lines.push(`<meta property="og:image:height" content="630" />`);
+    lines.push(`<meta name="twitter:image" content="${img}" />`);
+  }
+  return lines.join("\n    ");
+}
+function injectHead(shell, tags) {
+  return shell.replace(/<title>[\s\S]*?<\/title>\s*/i, "").replace(/<meta\s+name="description"[\s\S]*?\/>\s*/i, "").replace(/<\/head>/i, `    ${tags}
+  </head>`);
+}
+ogRouter.get("/recipe/:slug", async (req, res, next) => {
+  try {
+    const shell = loadShell();
+    if (!shell) {
+      res.status(204).end();
+      return;
+    }
+    const origin = `${req.protocol}://${req.get("host")}`;
+    let tags;
+    try {
+      await connectDB();
+      const doc = await Recipe.findOne({ slug: req.params.slug }).lean();
+      if (doc) {
+        const recipe = serializeRecipe(doc);
+        const share = recipeShareMeta(recipe, {
+          siteOrigin: origin,
+          siteName: SITE_NAME,
+          cloudName: process.env.CLOUDINARY_CLOUD_NAME
+        });
+        tags = metaTags(share);
+      } else {
+        tags = metaTags({
+          title: SITE_NAME,
+          description: "Recipes we cook, with photos.",
+          url: `${origin}/recipe/${req.params.slug}`,
+          imageUrl: ""
+        });
+      }
+    } catch {
+      tags = metaTags({
+        title: SITE_NAME,
+        description: "Recipes we cook, with photos.",
+        url: `${origin}/recipe/${req.params.slug}`,
+        imageUrl: ""
+      });
+    }
+    res.status(200).set("Content-Type", "text/html; charset=utf-8").set("Cache-Control", "public, max-age=0, s-maxage=300, stale-while-revalidate=86400").send(injectHead(shell, tags));
+  } catch (err) {
+    next(err);
+  }
+});
+
 // server/index.ts
-var app = (0, import_express4.default)();
+var app = (0, import_express5.default)();
 var CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
-app.use((0, import_helmet.default)());
+app.use((0, import_helmet.default)({ contentSecurityPolicy: false }));
 app.use(
   (0, import_cors.default)({
     origin: CLIENT_ORIGIN,
     credentials: true
   })
 );
-app.use(import_express4.default.json({ limit: "1mb" }));
+app.use(import_express5.default.json({ limit: "1mb" }));
 app.use((0, import_cookie_parser.default)());
 var DB_EXEMPT = ["/api/health", "/api/auth"];
 app.use(async (req, res, next) => {
@@ -557,6 +675,7 @@ app.use("/api/recipes", recipes_default);
 app.use("/api/tags", tagsRouter);
 app.use("/api/auth", auth_default);
 app.use("/api/uploads", uploads_default);
+app.use(ogRouter);
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found." });
 });

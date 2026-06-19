@@ -4,7 +4,11 @@
 // Vercel serves). api/package.json marks the dir as CommonJS. vercel.json
 // rewrites every /api/* path (any depth) to this single function.
 import { build } from "esbuild";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, join } from "node:path";
+
+const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 mkdirSync("api", { recursive: true });
 
@@ -14,6 +18,9 @@ await build({
   platform: "node",
   target: "node20",
   format: "cjs",
+  // Resolve the @shared/* path alias for runtime (non-type) imports. Type-only
+  // imports get stripped, but server/routes/og.ts pulls in runtime values.
+  alias: { "@shared": join(root, "shared") },
   // Single function; vercel.json rewrites every /api/* path (any depth) to it,
   // and the Express app routes internally on the original url. (A bracketed
   // [...path].js catch-all is NOT used: without a framework that expands it,
@@ -32,5 +39,15 @@ await build({
 
 // Ensure the emitted .js is treated as CommonJS even though the root is ESM.
 writeFileSync("api/package.json", JSON.stringify({ type: "commonjs" }, null, 2) + "\n");
+
+// Copy the built SPA shell next to the function so the OG route (server/routes/
+// og.ts) can read it and inject per-recipe <head> tags for link unfurls. Built
+// by `vite build`, which runs before this step in `npm run build`.
+try {
+  copyFileSync(join(root, "dist", "index.html"), join(root, "api", "index.html"));
+  console.log("Copied dist/index.html → api/index.html (OG shell)");
+} catch {
+  console.warn("WARN: dist/index.html not found — OG unfurl route will fall back to the SPA.");
+}
 
 console.log("API bundled → api/index.js (CommonJS)");

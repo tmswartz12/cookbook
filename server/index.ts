@@ -6,12 +6,16 @@ import { connectDB } from "./lib/db";
 import recipesRouter, { tagsRouter } from "./routes/recipes";
 import authRouter from "./routes/auth";
 import uploadsRouter from "./routes/uploads";
+import { ogRouter } from "./routes/og";
 
 const app = express();
 
 const CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 
-app.use(helmet());
+// CSP is disabled: the SPA shell (served statically and, for /recipe/:slug, by
+// the OG route below) loads Google Fonts, the GIS script, and Cloudinary
+// images. Helmet's default CSP would block those; keep the other hardening.
+app.use(helmet({ contentSecurityPolicy: false }));
 app.use(
   cors({
     origin: CLIENT_ORIGIN,
@@ -51,6 +55,11 @@ app.use("/api/recipes", recipesRouter);
 app.use("/api/tags", tagsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/uploads", uploadsRouter);
+
+// Server-rendered <head> for /recipe/:slug so shared links unfurl with the
+// recipe's photo + title. vercel.json rewrites that path to this function;
+// real browsers still hydrate the SPA after this initial HTML.
+app.use(ogRouter);
 
 // 404 for unknown API routes.
 app.use("/api", (_req, res) => {

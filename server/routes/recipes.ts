@@ -103,6 +103,17 @@ async function uniqueSlug(title: string, ignoreId?: string): Promise<string> {
   return `${baseSlug}-${randomSuffix()}${randomSuffix()}`;
 }
 
+// Drop an empty "recommended by" credit (no name) and blank IG handles, so we
+// never persist a hollow sub-document.
+function cleanRecommendedBy(
+  value: { name?: string; instagram?: string } | undefined,
+): { name: string; instagram?: string } | undefined {
+  const name = value?.name?.trim();
+  if (!name) return undefined;
+  const instagram = value?.instagram?.trim();
+  return instagram ? { name, instagram } : { name };
+}
+
 // Map a Mongo duplicate-key error on slug to a 409.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function isSlugConflict(err: any): boolean {
@@ -125,6 +136,7 @@ router.post("/", requireEditor, async (req, res, next) => {
       tags: normalizeTags(data.tags),
       dateCooked: new Date(data.dateCooked),
       sourceUrl: data.sourceUrl || undefined,
+      recommendedBy: cleanRecommendedBy(data.recommendedBy),
       createdBy: currentEmail(req),
     });
     res.status(201).json(serializeRecipe(doc.toObject()));
@@ -165,6 +177,8 @@ router.patch("/:id", requireEditor, async (req, res, next) => {
         existing.set("tags", normalizeTags(value as string[]));
       } else if (key === "sourceUrl") {
         existing.set("sourceUrl", (value as string) || undefined);
+      } else if (key === "recommendedBy") {
+        existing.set("recommendedBy", cleanRecommendedBy(value as { name?: string; instagram?: string }));
       } else {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         existing.set(key, value as any);

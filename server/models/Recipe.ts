@@ -13,6 +13,14 @@ const cloudImageSchema = new Schema(
   { _id: false },
 );
 
+const recommendedBySchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    instagram: { type: String, trim: true },
+  },
+  { _id: false },
+);
+
 const recipeSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -32,6 +40,8 @@ const recipeSchema = new Schema(
     makeAgain: { type: Boolean, default: false },
     notes: { type: String },
     sourceUrl: { type: String, trim: true },
+    recommendedBy: { type: recommendedBySchema, default: undefined },
+    cookedFor: { type: [String], default: [] },
     createdBy: { type: String, required: true },
   },
   { timestamps: true },

@@ -22,6 +22,10 @@ export function serializeRecipe(doc: any): RecipeType {
     makeAgain: Boolean(doc.makeAgain),
     notes: doc.notes ?? undefined,
     sourceUrl: doc.sourceUrl ?? undefined,
+    recommendedBy: doc.recommendedBy
+      ? { name: doc.recommendedBy.name, instagram: doc.recommendedBy.instagram ?? undefined }
+      : undefined,
+    cookedFor: doc.cookedFor ?? [],
     createdBy: doc.createdBy,
     createdAt: toISO(doc.createdAt),
     updatedAt: toISO(doc.updatedAt),

@@ -97,6 +97,13 @@ var cloudImageSchema = new Schema(
   },
   { _id: false }
 );
+var recommendedBySchema = new Schema(
+  {
+    name: { type: String, required: true, trim: true },
+    instagram: { type: String, trim: true }
+  },
+  { _id: false }
+);
 var recipeSchema = new Schema(
   {
     title: { type: String, required: true, trim: true },
@@ -116,6 +123,8 @@ var recipeSchema = new Schema(
     makeAgain: { type: Boolean, default: false },
     notes: { type: String },
     sourceUrl: { type: String, trim: true },
+    recommendedBy: { type: recommendedBySchema, default: void 0 },
+    cookedFor: { type: [String], default: [] },
     createdBy: { type: String, required: true }
   },
   { timestamps: true }
@@ -151,6 +160,8 @@ function serializeRecipe(doc) {
     makeAgain: Boolean(doc.makeAgain),
     notes: doc.notes ?? void 0,
     sourceUrl: doc.sourceUrl ?? void 0,
+    recommendedBy: doc.recommendedBy ? { name: doc.recommendedBy.name, instagram: doc.recommendedBy.instagram ?? void 0 } : void 0,
+    cookedFor: doc.cookedFor ?? [],
     createdBy: doc.createdBy,
     createdAt: toISO(doc.createdAt),
     updatedAt: toISO(doc.updatedAt)
@@ -172,6 +183,11 @@ var cloudImage = import_zod.z.object({
 }).strict();
 var lineArray = import_zod.z.array(import_zod.z.string().trim().min(1, "No empty lines.")).default([]);
 var tagArray = import_zod.z.array(import_zod.z.string().trim().min(1)).max(20).default([]);
+var cookedForArray = import_zod.z.array(import_zod.z.string().trim().min(1)).max(50).default([]);
+var recommendedBy = import_zod.z.object({
+  name: import_zod.z.string().trim().min(1, "Add a name."),
+  instagram: import_zod.z.string().trim().max(61).transform((s) => s.replace(/^@+/, "").trim()).optional().or(import_zod.z.literal(""))
+}).strict().optional();
 var base = {
   title: import_zod.z.string().trim().min(1, "Give it a title."),
   description: import_zod.z.string().trim().max(280).optional(),
@@ -188,7 +204,9 @@ var base = {
   rating: import_zod.z.number().int().min(1).max(5).optional(),
   makeAgain: import_zod.z.boolean().default(false),
   notes: import_zod.z.string().trim().max(4e3).optional(),
-  sourceUrl: import_zod.z.string().trim().url().optional().or(import_zod.z.literal(""))
+  sourceUrl: import_zod.z.string().trim().url().optional().or(import_zod.z.literal("")),
+  recommendedBy,
+  cookedFor: cookedForArray
 };
 var createRecipeSchema = import_zod.z.object(base).strict();
 var updateRecipeSchema = import_zod.z.object(base).partial().strict();
@@ -371,6 +389,12 @@ async function uniqueSlug(title, ignoreId) {
   }
   return `${baseSlug}-${randomSuffix()}${randomSuffix()}`;
 }
+function cleanRecommendedBy(value) {
+  const name = value?.name?.trim();
+  if (!name) return void 0;
+  const instagram = value?.instagram?.trim();
+  return instagram ? { name, instagram } : { name };
+}
 function isSlugConflict(err) {
   return err?.code === 11e3 && Boolean(err?.keyPattern?.slug);
 }
@@ -389,6 +413,7 @@ router.post("/", requireEditor, async (req, res, next) => {
       tags: normalizeTags(data.tags),
       dateCooked: new Date(data.dateCooked),
       sourceUrl: data.sourceUrl || void 0,
+      recommendedBy: cleanRecommendedBy(data.recommendedBy),
       createdBy: currentEmail(req)
     });
     res.status(201).json(serializeRecipe(doc.toObject()));
@@ -423,6 +448,8 @@ router.patch("/:id", requireEditor, async (req, res, next) => {
         existing.set("tags", normalizeTags(value));
       } else if (key === "sourceUrl") {
         existing.set("sourceUrl", value || void 0);
+      } else if (key === "recommendedBy") {
+        existing.set("recommendedBy", cleanRecommendedBy(value));
       } else {
         existing.set(key, value);
       }

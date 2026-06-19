@@ -6,14 +6,14 @@
   "description": "A shared cookbook for Tyler & Sarah — photo-forward recipes, public by link, editable by two.",
   "scripts": {
     "dev": "vite",
-    "dev:api": "tsx watch --env-file=.env server/dev-server.ts",
+    "dev:api": "tsx watch --tsconfig tsconfig.node.json --env-file=.env server/dev-server.ts",
     "dev:all": "concurrently -n api,web -c green,cyan \"npm:dev:api\" \"npm:dev\"",
     "dev:vercel": "vercel dev",
     "build": "tsc -b && vite build && npm run build:api",
     "build:api": "node scripts/build-api.mjs",
     "preview": "vite preview",
     "typecheck": "tsc -b",
-    "seed": "tsx --env-file=.env server/seed.ts"
+    "seed": "tsx --tsconfig tsconfig.node.json --env-file=.env server/seed.ts"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.51.0",

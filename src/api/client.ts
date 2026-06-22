@@ -13,6 +13,9 @@ import type {
   RecipeInput,
   RecipeListResponse,
   RecipeQuery,
+  Suggestion,
+  SuggestionInput,
+  SuggestionListResponse,
   User,
 } from "@shared/types";
 
@@ -162,6 +165,59 @@ export function useDeleteRecipe() {
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: recipeKeys.all });
       qc.invalidateQueries({ queryKey: recipeKeys.tags });
+    },
+  });
+}
+
+// ---------- Suggestions ----------
+
+export const suggestionKeys = {
+  all: ["suggestions"] as const,
+};
+
+/** Submit a recipe suggestion (public — no sign-in required). */
+export function useSubmitSuggestion() {
+  return useMutation({
+    mutationFn: async (input: SuggestionInput) => {
+      const { data } = await api.post<Suggestion>("/suggestions", input);
+      return data;
+    },
+  });
+}
+
+/** Editor-only: list every suggestion (un-cooked first). */
+export function useSuggestions(enabled: boolean) {
+  return useQuery({
+    queryKey: suggestionKeys.all,
+    queryFn: async () => {
+      const { data } = await api.get<SuggestionListResponse>("/suggestions");
+      return Array.isArray(data?.items) ? data.items : [];
+    },
+    enabled,
+  });
+}
+
+export function useSetSuggestionCooked() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, cooked }: { id: string; cooked: boolean }) => {
+      const { data } = await api.patch<Suggestion>(`/suggestions/${id}`, { cooked });
+      return data;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: suggestionKeys.all });
+    },
+  });
+}
+
+export function useDeleteSuggestion() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      await api.delete(`/suggestions/${id}`);
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: suggestionKeys.all });
     },
   });
 }

@@ -12,16 +12,20 @@ const RecipePage = lazy(() =>
 const RecipeFormPage = lazy(() =>
   import("./pages/RecipeFormPage").then((m) => ({ default: m.RecipeFormPage })),
 );
-const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })));
+const AdminPage = lazy(() => import("./pages/AdminPage").then((m) => ({ default: m.AdminPage })));
 const NotFoundPage = lazy(() =>
   import("./pages/NotFoundPage").then((m) => ({ default: m.NotFoundPage })),
 );
 
-/** Editor-only route guard: viewers (or logged-out) are redirected home. */
+/**
+ * Editor-only route guard. Logged-out visitors go to /admin (the hidden sign-in
+ * surface, so they can sign in and come back); signed-in non-editors are sent home.
+ */
 function RequireEditor({ children }: { children: ReactElement }) {
-  const { isEditor, isLoading } = useAuth();
+  const { user, isEditor, isLoading } = useAuth();
   if (isLoading) return <PageSpinner />;
-  return isEditor ? children : <Navigate to="/" replace />;
+  if (isEditor) return children;
+  return <Navigate to={user ? "/" : "/admin"} replace />;
 }
 
 function PageSpinner() {
@@ -67,7 +71,10 @@ export default function App() {
                 </RequireEditor>
               }
             />
-            <Route path="/login" element={<LoginPage />} />
+            <Route path="/login" element={<Navigate to="/admin" replace />} />
+            {/* Hidden sign-in + editor dashboard. Public route so logged-out
+                editors can reach the sign-in; the page itself gates content. */}
+            <Route path="/admin" element={<AdminPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Routes>
         </Suspense>

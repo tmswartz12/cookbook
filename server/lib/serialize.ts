@@ -1,4 +1,4 @@
-import type { Recipe as RecipeType } from "@shared/types";
+import type { Recipe as RecipeType, Suggestion as SuggestionType } from "@shared/types";
 
 /** Convert a lean/raw Mongo recipe document into the shared Recipe API shape. */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -27,6 +27,22 @@ export function serializeRecipe(doc: any): RecipeType {
       : undefined,
     cookedFor: doc.cookedFor ?? [],
     createdBy: doc.createdBy,
+    createdAt: toISO(doc.createdAt),
+    updatedAt: toISO(doc.updatedAt),
+  };
+}
+
+/** Convert a lean/raw Mongo suggestion document into the shared API shape. */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export function serializeSuggestion(doc: any): SuggestionType {
+  return {
+    _id: String(doc._id),
+    name: doc.name,
+    title: doc.title,
+    description: doc.description ?? undefined,
+    instagram: doc.instagram ?? undefined,
+    sourceUrl: doc.sourceUrl ?? undefined,
+    cooked: Boolean(doc.cooked),
     createdAt: toISO(doc.createdAt),
     updatedAt: toISO(doc.updatedAt),
   };

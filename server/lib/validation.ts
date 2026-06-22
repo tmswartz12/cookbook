@@ -63,6 +63,26 @@ export const updateRecipeSchema = z.object(base).partial().strict();
 export type CreateRecipeBody = z.infer<typeof createRecipeSchema>;
 export type UpdateRecipeBody = z.infer<typeof updateRecipeSchema>;
 
+// A public recipe suggestion. Name + title are required; the rest optional.
+// The leading @ is stripped from the Instagram handle, mirroring recommendedBy.
+export const createSuggestionSchema = z
+  .object({
+    name: z.string().trim().min(1, "Add your name.").max(120),
+    title: z.string().trim().min(1, "What should we cook?").max(200),
+    description: z.string().trim().max(500).optional().or(z.literal("")),
+    instagram: z
+      .string()
+      .trim()
+      .max(61)
+      .transform((s) => s.replace(/^@+/, "").trim())
+      .optional()
+      .or(z.literal("")),
+    sourceUrl: z.string().trim().url("That doesn't look like a link.").optional().or(z.literal("")),
+  })
+  .strict();
+
+export type CreateSuggestionBody = z.infer<typeof createSuggestionSchema>;
+
 /** Flatten a ZodError into { field: message } for the API error shape. */
 export function zodFields(err: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {};

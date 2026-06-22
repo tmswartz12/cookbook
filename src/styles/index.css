@@ -27,6 +27,16 @@
     border-radius: 4px;
   }
 
+  /* Slide-in panel (suggestion drawer). */
+  @keyframes slidein {
+    from {
+      transform: translateX(100%);
+    }
+    to {
+      transform: translateX(0);
+    }
+  }
+
   /* Honor reduced-motion preferences. */
   @media (prefers-reduced-motion: reduce) {
     *,

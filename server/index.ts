@@ -6,6 +6,7 @@ import { connectDB } from "./lib/db";
 import recipesRouter, { tagsRouter } from "./routes/recipes";
 import authRouter from "./routes/auth";
 import uploadsRouter from "./routes/uploads";
+import suggestionsRouter from "./routes/suggestions";
 import { ogRouter } from "./routes/og";
 
 const app = express();
@@ -55,6 +56,7 @@ app.use("/api/recipes", recipesRouter);
 app.use("/api/tags", tagsRouter);
 app.use("/api/auth", authRouter);
 app.use("/api/uploads", uploadsRouter);
+app.use("/api/suggestions", suggestionsRouter);
 
 // Server-rendered <head> for /recipe/:slug so shared links unfurl with the
 // recipe's photo + title. vercel.json rewrites that path to this function;

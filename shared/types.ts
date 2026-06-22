@@ -44,6 +44,33 @@ export interface User {
   role: Role;
 }
 
+/** A recipe someone suggested we cook, submitted via the navbar drawer. */
+export interface Suggestion {
+  _id: string;
+  name: string; // who suggested it
+  title: string; // the recipe they want us to make
+  description?: string; // short pitch
+  instagram?: string; // optional IG handle (bare, no @)
+  sourceUrl?: string; // optional link to the recipe
+  cooked: boolean; // have we made it yet?
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Payload the suggestion drawer sends — public, anyone can submit. */
+export interface SuggestionInput {
+  name: string;
+  title: string;
+  description?: string;
+  instagram?: string;
+  sourceUrl?: string;
+}
+
+/** Shape of GET /api/suggestions (editor only). */
+export interface SuggestionListResponse {
+  items: Suggestion[];
+}
+
 /** Shape of GET /api/recipes */
 export interface RecipeListResponse {
   items: Recipe[];

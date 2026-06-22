@@ -32,7 +32,7 @@ __export(index_exports, {
   default: () => index_default
 });
 module.exports = __toCommonJS(index_exports);
-var import_express5 = __toESM(require("express"), 1);
+var import_express6 = __toESM(require("express"), 1);
 var import_cors = __toESM(require("cors"), 1);
 var import_helmet = __toESM(require("helmet"), 1);
 var import_cookie_parser = __toESM(require("cookie-parser"), 1);
@@ -167,6 +167,19 @@ function serializeRecipe(doc) {
     updatedAt: toISO(doc.updatedAt)
   };
 }
+function serializeSuggestion(doc) {
+  return {
+    _id: String(doc._id),
+    name: doc.name,
+    title: doc.title,
+    description: doc.description ?? void 0,
+    instagram: doc.instagram ?? void 0,
+    sourceUrl: doc.sourceUrl ?? void 0,
+    cooked: Boolean(doc.cooked),
+    createdAt: toISO(doc.createdAt),
+    updatedAt: toISO(doc.updatedAt)
+  };
+}
 function toISO(value) {
   if (value instanceof Date) return value.toISOString();
   if (typeof value === "string") return value;
@@ -210,6 +223,13 @@ var base = {
 };
 var createRecipeSchema = import_zod.z.object(base).strict();
 var updateRecipeSchema = import_zod.z.object(base).partial().strict();
+var createSuggestionSchema = import_zod.z.object({
+  name: import_zod.z.string().trim().min(1, "Add your name.").max(120),
+  title: import_zod.z.string().trim().min(1, "What should we cook?").max(200),
+  description: import_zod.z.string().trim().max(500).optional().or(import_zod.z.literal("")),
+  instagram: import_zod.z.string().trim().max(61).transform((s) => s.replace(/^@+/, "").trim()).optional().or(import_zod.z.literal("")),
+  sourceUrl: import_zod.z.string().trim().url("That doesn't look like a link.").optional().or(import_zod.z.literal(""))
+}).strict();
 function zodFields(err) {
   const out = {};
   for (const issue of err.issues) {
@@ -547,8 +567,105 @@ router3.post("/sign", requireEditor, (_req, res, next) => {
 });
 var uploads_default = router3;
 
-// server/routes/og.ts
+// server/routes/suggestions.ts
 var import_express4 = require("express");
+var import_express_rate_limit2 = __toESM(require("express-rate-limit"), 1);
+
+// server/models/Suggestion.ts
+var import_mongoose3 = __toESM(require("mongoose"), 1);
+var { Schema: Schema2, model: model2, models: models2 } = import_mongoose3.default;
+var suggestionSchema = new Schema2(
+  {
+    name: { type: String, required: true, trim: true },
+    title: { type: String, required: true, trim: true },
+    description: { type: String, trim: true },
+    instagram: { type: String, trim: true },
+    sourceUrl: { type: String, trim: true },
+    cooked: { type: Boolean, default: false }
+  },
+  { timestamps: true }
+);
+suggestionSchema.index({ cooked: 1, createdAt: -1 });
+var Suggestion = models2.Suggestion || model2("Suggestion", suggestionSchema);
+
+// server/routes/suggestions.ts
+var router4 = (0, import_express4.Router)();
+var submitLimiter = (0, import_express_rate_limit2.default)({
+  windowMs: 60 * 60 * 1e3,
+  max: 20,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+function clean(value) {
+  const trimmed = value?.trim();
+  return trimmed ? trimmed : void 0;
+}
+router4.post("/", submitLimiter, async (req, res, next) => {
+  const parsed = createSuggestionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    res.status(400).json({ error: "Please check the highlighted fields.", fields: zodFields(parsed.error) });
+    return;
+  }
+  try {
+    const data = parsed.data;
+    const doc = await Suggestion.create({
+      name: data.name,
+      title: data.title,
+      description: clean(data.description),
+      instagram: clean(data.instagram),
+      sourceUrl: clean(data.sourceUrl)
+    });
+    res.status(201).json(serializeSuggestion(doc.toObject()));
+  } catch (err) {
+    next(err);
+  }
+});
+router4.get("/", requireEditor, async (_req, res, next) => {
+  try {
+    const docs = await Suggestion.find().sort({ cooked: 1, createdAt: -1 }).lean();
+    const body = { items: docs.map(serializeSuggestion) };
+    res.json(body);
+  } catch (err) {
+    next(err);
+  }
+});
+router4.patch("/:id", requireEditor, async (req, res, next) => {
+  try {
+    const cooked = req.body?.cooked;
+    if (typeof cooked !== "boolean") {
+      res.status(400).json({ error: "Send { cooked: true | false }." });
+      return;
+    }
+    const doc = await Suggestion.findByIdAndUpdate(
+      req.params.id,
+      { cooked },
+      { new: true }
+    ).lean();
+    if (!doc) {
+      res.status(404).json({ error: "Suggestion not found." });
+      return;
+    }
+    res.json(serializeSuggestion(doc));
+  } catch (err) {
+    next(err);
+  }
+});
+router4.delete("/:id", requireEditor, async (req, res, next) => {
+  try {
+    const doc = await Suggestion.findByIdAndDelete(req.params.id).lean();
+    if (!doc) {
+      res.status(404).json({ error: "Suggestion not found." });
+      return;
+    }
+    res.status(204).end();
+  } catch (err) {
+    next(err);
+  }
+});
+var suggestions_default = router4;
+
+// server/routes/og.ts
+var import_express5 = require("express");
 var import_node_fs = require("node:fs");
 var import_node_path = require("node:path");
 
@@ -571,7 +688,7 @@ function recipeShareMeta(recipe, opts) {
 }
 
 // server/routes/og.ts
-var ogRouter = (0, import_express4.Router)();
+var ogRouter = (0, import_express5.Router)();
 var shellCache = null;
 function loadShell() {
   if (shellCache !== null) return shellCache;
@@ -666,7 +783,7 @@ ogRouter.get("/recipe/:slug", async (req, res, next) => {
 });
 
 // server/index.ts
-var app = (0, import_express5.default)();
+var app = (0, import_express6.default)();
 var CLIENT_ORIGIN = process.env.CLIENT_ORIGIN ?? "http://localhost:5173";
 app.use((0, import_helmet.default)({ contentSecurityPolicy: false }));
 app.use(
@@ -675,7 +792,7 @@ app.use(
     credentials: true
   })
 );
-app.use(import_express5.default.json({ limit: "1mb" }));
+app.use(import_express6.default.json({ limit: "1mb" }));
 app.use((0, import_cookie_parser.default)());
 var DB_EXEMPT = ["/api/health", "/api/auth"];
 app.use(async (req, res, next) => {
@@ -702,6 +819,7 @@ app.use("/api/recipes", recipes_default);
 app.use("/api/tags", tagsRouter);
 app.use("/api/auth", auth_default);
 app.use("/api/uploads", uploads_default);
+app.use("/api/suggestions", suggestions_default);
 app.use(ogRouter);
 app.use("/api", (_req, res) => {
   res.status(404).json({ error: "Not found." });

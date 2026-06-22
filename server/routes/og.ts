@@ -8,28 +8,29 @@ import { SITE_NAME, recipeShareMeta } from "@shared/share";
 
 export const ogRouter = Router();
 
-// The built SPA shell. The API-build step copies dist/index.html next to the
-// bundled function as `index.html`; we read it once per cold start and inject
-// per-recipe <head> tags into it for each request.
+// The built SPA shell, embedded at build time by scripts/build-api.mjs (esbuild
+// `define`), so the bundled serverless function carries it without reading a
+// file at runtime. It is intentionally NOT written to api/ as a file: Vercel
+// treats every file under api/ as a function and rejects the build because
+// api/index.html collides with api/index.js. In dev (tsx, no esbuild define)
+// the constant is undefined, so we fall back to reading the repo's dist build.
+declare const __OG_SHELL_HTML__: string | undefined;
+
 let shellCache: string | null = null;
 
 function loadShell(): string {
   if (shellCache !== null) return shellCache;
-  // Try a few locations: alongside the bundle (prod) and the repo dist (dev).
-  const candidates = [
-    join(__dirname, "index.html"),
-    join(process.cwd(), "api", "index.html"),
-    join(process.cwd(), "dist", "index.html"),
-  ];
-  for (const path of candidates) {
-    try {
-      shellCache = readFileSync(path, "utf8");
-      return shellCache;
-    } catch {
-      // try next
-    }
+  // Prod: the inlined constant. Dev: read the repo dist build if present.
+  const embedded = typeof __OG_SHELL_HTML__ === "string" ? __OG_SHELL_HTML__ : "";
+  if (embedded) {
+    shellCache = embedded;
+    return shellCache;
   }
-  shellCache = "";
+  try {
+    shellCache = readFileSync(join(process.cwd(), "dist", "index.html"), "utf8");
+  } catch {
+    shellCache = "";
+  }
   return shellCache;
 }
 

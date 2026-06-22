@@ -692,19 +692,47 @@ var ogRouter = (0, import_express5.Router)();
 var shellCache = null;
 function loadShell() {
   if (shellCache !== null) return shellCache;
-  const candidates = [
-    (0, import_node_path.join)(__dirname, "index.html"),
-    (0, import_node_path.join)(process.cwd(), "api", "index.html"),
-    (0, import_node_path.join)(process.cwd(), "dist", "index.html")
-  ];
-  for (const path of candidates) {
-    try {
-      shellCache = (0, import_node_fs.readFileSync)(path, "utf8");
-      return shellCache;
-    } catch {
-    }
+  const embedded = true ? `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="Tyler & Sarah's cookbook \u2014 recipes we cook, with photos. Browse freely."
+    />
+    <title>Tyler & Sarah's Cookbook</title>
+
+    <!-- Fonts: Fraunces (display), DM Sans (body/UI), Caveat (handwritten accent) -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Caveat:wght@500;600;700&family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=Fraunces:opsz,wght@9..144,400;9..144,500;9..144,600;9..144,700&display=swap"
+      rel="stylesheet"
+    />
+
+    <!-- Google Identity Services (used by the editor sign-in flow) -->
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    <script type="module" crossorigin src="/assets/index-la37en5U.js"></script>
+    <link rel="modulepreload" crossorigin href="/assets/react-Dq2joMLN.js">
+    <link rel="modulepreload" crossorigin href="/assets/query-DfxYOEtx.js">
+    <link rel="stylesheet" crossorigin href="/assets/index-CC0PIFJD.css">
+  </head>
+  <body>
+    <div id="root"></div>
+  </body>
+</html>
+` : "";
+  if (embedded) {
+    shellCache = embedded;
+    return shellCache;
   }
-  shellCache = "";
+  try {
+    shellCache = (0, import_node_fs.readFileSync)((0, import_node_path.join)(process.cwd(), "dist", "index.html"), "utf8");
+  } catch {
+    shellCache = "";
+  }
   return shellCache;
 }
 function escapeHtml(s) {

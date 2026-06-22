@@ -4,13 +4,28 @@
 // Vercel serves). api/package.json marks the dir as CommonJS. vercel.json
 // rewrites every /api/* path (any depth) to this single function.
 import { build } from "esbuild";
-import { copyFileSync, mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 
 mkdirSync("api", { recursive: true });
+
+// Read the built SPA shell and embed it into the bundle as a compile-time
+// constant (consumed in server/routes/og.ts as __OG_SHELL_HTML__). It must NOT
+// be written as api/index.html: Vercel treats every file under api/ as a
+// function and rejects the build because api/index.html collides with
+// api/index.js on the shared "index" basename. Inlining sidesteps the
+// filesystem entirely, which is also more reliable on Vercel's serverless
+// layout. Built by `vite build`, which runs before this step in `npm run build`.
+let shellHtml = "";
+try {
+  shellHtml = readFileSync(join(root, "dist", "index.html"), "utf8");
+  console.log("Embedded dist/index.html into the bundle (OG shell)");
+} catch {
+  console.warn("WARN: dist/index.html not found — OG unfurl route will fall back to the SPA.");
+}
 
 await build({
   entryPoints: ["server/index.ts"],
@@ -21,6 +36,10 @@ await build({
   // Resolve the @shared/* path alias for runtime (non-type) imports. Type-only
   // imports get stripped, but server/routes/og.ts pulls in runtime values.
   alias: { "@shared": join(root, "shared") },
+  // Inline the SPA shell so og.ts can serve link-unfurl HTML without reading a
+  // file at runtime. JSON.stringify yields a valid JS string literal for any
+  // HTML content.
+  define: { __OG_SHELL_HTML__: JSON.stringify(shellHtml) },
   // Single function; vercel.json rewrites every /api/* path (any depth) to it,
   // and the Express app routes internally on the original url. (A bracketed
   // [...path].js catch-all is NOT used: without a framework that expands it,
@@ -39,15 +58,5 @@ await build({
 
 // Ensure the emitted .js is treated as CommonJS even though the root is ESM.
 writeFileSync("api/package.json", JSON.stringify({ type: "commonjs" }, null, 2) + "\n");
-
-// Copy the built SPA shell next to the function so the OG route (server/routes/
-// og.ts) can read it and inject per-recipe <head> tags for link unfurls. Built
-// by `vite build`, which runs before this step in `npm run build`.
-try {
-  copyFileSync(join(root, "dist", "index.html"), join(root, "api", "index.html"));
-  console.log("Copied dist/index.html → api/index.html (OG shell)");
-} catch {
-  console.warn("WARN: dist/index.html not found — OG unfurl route will fall back to the SPA.");
-}
 
 console.log("API bundled → api/index.js (CommonJS)");

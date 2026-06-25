@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { CloudImage } from "@shared/types";
 import { cld, LIGHTBOX } from "../api/cloudinary";
 
@@ -9,18 +9,47 @@ interface Props {
   onClose: () => void;
 }
 
+/** Resolve a single image to its Cloudinary lightbox URL (falling back to the stored url). */
+function srcFor(image: CloudImage): string {
+  return (image.publicId ? cld(image.publicId, LIGHTBOX) : "") || image.url;
+}
+
 /**
  * Navigable image viewer. Closes on backdrop/Escape; arrows + ←/→ keys page
- * through the gallery. Wraps around at the ends.
+ * through the gallery and wrap at the ends.
+ *
+ * Paging stays smooth because we (1) preload the neighbouring images so the
+ * next/previous photo is already cached when you click, and (2) fade each photo
+ * in once it's decoded instead of hard-swapping — so a slow image never leaves
+ * the previous one flashing on screen.
  */
 export function Lightbox({ images, startIndex = 0, alt, onClose }: Props) {
   const [index, setIndex] = useState(startIndex);
+  // Indices whose image bytes have finished loading — drives the fade-in.
+  const [loaded, setLoaded] = useState<Set<number>>(new Set());
   const count = images.length;
+
+  const sources = useMemo(() => images.map(srcFor), [images]);
 
   const go = useCallback(
     (delta: number) => setIndex((i) => (i + delta + count) % count),
     [count],
   );
+
+  const markLoaded = useCallback(
+    (i: number) => setLoaded((prev) => (prev.has(i) ? prev : new Set(prev).add(i))),
+    [],
+  );
+
+  // Preload the neighbours so paging left/right shows an already-decoded image.
+  useEffect(() => {
+    if (count <= 1) return;
+    [(index + 1) % count, (index - 1 + count) % count].forEach((i) => {
+      const img = new Image();
+      img.onload = () => markLoaded(i);
+      img.src = sources[i];
+    });
+  }, [index, count, sources, markLoaded]);
 
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -37,8 +66,6 @@ export function Lightbox({ images, startIndex = 0, alt, onClose }: Props) {
   }, [onClose, go]);
 
   if (count === 0) return null;
-  const image = images[index];
-  const src = image.publicId ? cld(image.publicId, LIGHTBOX) || image.url : image.url;
 
   return (
     <div
@@ -48,13 +75,23 @@ export function Lightbox({ images, startIndex = 0, alt, onClose }: Props) {
       aria-label={`${alt} — photo ${index + 1} of ${count}`}
       onClick={onClose}
     >
-      {/* Image */}
-      <img
-        src={src}
-        alt={`${alt} (${index + 1}/${count})`}
-        className="max-h-[88vh] max-w-full rounded-lg shadow-lift"
+      {/* Stable frame: arrows + counter anchor to this box, so they don't jump as
+          images of different aspect ratios load in. */}
+      <div
+        className="relative flex max-h-[88vh] max-w-full items-center justify-center"
         onClick={(e) => e.stopPropagation()}
-      />
+      >
+        <img
+          key={index}
+          src={sources[index]}
+          alt={`${alt} (${index + 1}/${count})`}
+          decoding="async"
+          onLoad={() => markLoaded(index)}
+          className={`max-h-[88vh] max-w-full rounded-lg shadow-lift transition-opacity duration-200 ${
+            loaded.has(index) ? "opacity-100" : "opacity-0"
+          }`}
+        />
+      </div>
 
       {/* Close */}
       <button
